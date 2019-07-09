@@ -70,7 +70,7 @@
         <Compile Include="src\SceneManagement\ScenesLoader.cs" />
         <Compile Include="src\Serialization\FsSerializer.cs" />
         <Compile Include="src\Serialization\ISerializer.cs" />
-        <Compile Include="src\Serialization\SerializationManager.cs" />
+        <Compile Include="src\Serialization\Serialization.cs" />
         <Compile Include="src\Serialization\SerializerType.cs" />
         <Compile Include="src\Serialization\UnitySerializer.cs" />
         <Compile Include="src\Timer\Initialization\TimerInitializer.cs" />

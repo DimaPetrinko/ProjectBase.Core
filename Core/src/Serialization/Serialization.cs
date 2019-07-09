@@ -1,6 +1,6 @@
 namespace Core.Serialization
 {
-	public static class SerializationManager
+	public static class Serialization
 	{
 		private static ISerializer serializer;
 
