@@ -1,6 +1,8 @@
+using System.Text;
+
 namespace Core.Serialization
 {
-	public static class SerializationManager
+	public static class Serialization
 	{
 		private static ISerializer serializer;
 
@@ -11,6 +13,12 @@ namespace Core.Serialization
 				if (serializer == null) Init();
 				return serializer;
 			}
+		}
+
+		public static Encoding Encoding
+		{
+			get => Serializer.Encoding;
+			set => Serializer.Encoding = value;
 		}
 
 		public static void Init(SerializerType type = SerializerType.UnitySerializer)

@@ -10,7 +10,7 @@ namespace Core.SceneManagement
 		public static event Action<Scene, LoadSceneMode> SceneLoaded;
 		public static event Action<Scene> SceneUnloaded;
 
-		public static Action<AsyncOperation> ShowLoadingScreenAction;
+		public static Action<AsyncOperation> showLoadingScreenAction;
 
 		private static readonly Dictionary<string, bool> SetActives = new Dictionary<string, bool>();
 
@@ -30,8 +30,15 @@ namespace Core.SceneManagement
 		/// <param name="setActive">Whether to set this scene active after loading</param>
 		/// <param name="loadAsync">Whether to load the scene asynchronously</param>
 		/// <param name="additive">Can be either single or additional</param>
-		public static void LoadScene(int sceneIndex, bool setActive = true, bool loadAsync = true, bool additive = true) =>
-			LoadScene(SceneManager.GetSceneByBuildIndex(sceneIndex).name, setActive, loadAsync, additive);
+		public static void
+			LoadScene(int sceneIndex, bool setActive = true, bool loadAsync = true, bool additive = true)
+		{
+			SetActives.Add(sceneIndex.ToString(), setActive);
+			var mode = additive ? LoadSceneMode.Additive : LoadSceneMode.Single;
+			LoadScene(() => SceneManager.LoadScene(sceneIndex, mode),
+				() => SceneManager.LoadSceneAsync(sceneIndex, mode), setActive,
+				loadAsync, additive);
+		}
 
 		/// <summary>
 		///     Loads a given scene
@@ -50,7 +57,18 @@ namespace Core.SceneManagement
 			else
 			{
 				var asyncOperation = SceneManager.LoadSceneAsync(sceneName, mode);
-				ShowLoadingScreenAction(asyncOperation);
+				showLoadingScreenAction?.Invoke(asyncOperation);
+			}
+		}
+		
+		public static void LoadScene(Action loadSceneMethod, Func<AsyncOperation> loadSceneAsyncMethod, bool setActive = true, bool loadAsync = true, bool additive = true)
+		{
+			SceneManager.sceneLoaded += OnSceneLoaded;
+			if (!loadAsync) loadSceneMethod();
+			else
+			{
+				var asyncOperation = loadSceneAsyncMethod();
+				showLoadingScreenAction?.Invoke(asyncOperation);
 			}
 		}
 
@@ -58,13 +76,17 @@ namespace Core.SceneManagement
 		{
 			SceneManager.sceneLoaded -= OnSceneLoaded;
 			var setActive = true;
-			if (SetActives.ContainsKey(scene.name))
+			string key = null;
+			if (SetActives.ContainsKey(scene.name)) key = scene.name;
+			else if (SetActives.ContainsKey(scene.buildIndex.ToString())) key = scene.buildIndex.ToString();
+			
+			if (!string.IsNullOrEmpty(key))
 			{
-				setActive = SetActives[scene.name];
-				SetActives.Remove(scene.name);
+				setActive = SetActives[key];
+				SetActives.Remove(key);
 			}
 			if (setActive) SceneManager.SetActiveScene(scene);
-			SetActives.Remove(scene.name);
+			SetActives.Remove(key ?? scene.name);
 			SceneLoaded?.Invoke(scene, mode);
 		}
 

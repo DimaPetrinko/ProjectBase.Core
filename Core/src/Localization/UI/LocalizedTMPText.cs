@@ -1,9 +1,11 @@
 using System.Linq;
 using System.Text.RegularExpressions;
 using TMPro;
+using UnityEngine;
 
 namespace Core.Localization.UI
 {
+	[AddComponentMenu("UI/LocalizedTextMeshPro - Text (UI)", 12)]
 	public sealed class LocalizedTMPText : TextMeshProUGUI
 	{
 		protected override void Awake()
