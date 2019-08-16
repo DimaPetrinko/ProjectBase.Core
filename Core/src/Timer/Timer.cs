@@ -12,19 +12,12 @@ namespace Core.Timer
 
 		private Dictionary<TimerBadge, Coroutine> coroutines;
 		private Dictionary<TimerBadge, Action> updateActions;
+		private Dictionary<TimerBadge, Action> fixedUpdateActions;
 
 		private List<Action> updateActionsList;
+		private List<Action> fixedUpdateActionsList;
 
 		public static bool Exists => instance != null;
-
-		private void Awake()
-		{
-			coroutines = new Dictionary<TimerBadge, Coroutine>();
-			updateActions = new Dictionary<TimerBadge, Action>();
-			updateActionsList = new List<Action>();
-			
-			instance = this;
-		}
 
 		#region Set
 		
@@ -75,7 +68,7 @@ namespace Core.Timer
 		#endregion
 
 		#region RunInUpdate
-		
+
 		/// <summary>
 		/// Execute action every frame forever
 		/// </summary>
@@ -121,6 +114,54 @@ namespace Core.Timer
 		}
 
 		#endregion
+		
+		#region RunInFixedUpdate
+
+		/// <summary>
+		/// Execute action every frame forever
+		/// </summary>
+		/// <param name="action">Action to run</param>
+		/// <returns>Returns timer badge used to stop the timer</returns>
+		public static TimerBadge RunInFixedUpdate(Action action)
+		{
+			var timerBadge = new TimerBadge(instance.fixedUpdateActions.Count, DateTime.Now);
+			instance.fixedUpdateActions.Add(timerBadge, action);
+			instance.fixedUpdateActionsList.Add(action);
+			return timerBadge;
+		}
+
+		/// <summary>
+		/// Execute action every frame for seconds
+		/// </summary>
+		/// <param name="action">Action to run</param>
+		/// <param name="seconds">Time for executing action</param>
+		/// <returns>Returns timer badge used to stop the timer</returns>
+		public static TimerBadge RunInFixedUpdate(Action action, float seconds)
+		{
+			var timerBadge = RunInFixedUpdate(action);
+			Set(seconds, () => StopUpdate(timerBadge));
+			return timerBadge;
+		}
+
+		/// <summary>
+		/// Execute action every frame for seconds
+		/// </summary>
+		/// <param name="action">Action to run</param>
+		/// <param name="seconds">Time for executing action</param>
+		/// <param name="onComplete">Executed when timer is ended</param>
+		/// <returns>Returns timer badge used to stop the timer</returns>
+		public static TimerBadge RunInFixedUpdate(Action action, float seconds, Action onComplete)
+		{
+			var timerBadge = RunInFixedUpdate(action);
+			Set(seconds, () =>
+			{
+				StopUpdate(timerBadge);
+				onComplete();
+			});
+			return timerBadge;
+		}
+
+		#endregion
 
 		#region Stop
 
@@ -140,10 +181,19 @@ namespace Core.Timer
 			timerBadge.Expire();
 		}
 
+		public static void StopFixedUpdate(TimerBadge timerBadge)
+		{
+			if (!instance.fixedUpdateActions.ContainsKey(timerBadge)) return;
+			instance.fixedUpdateActionsList.Remove(instance.fixedUpdateActions[timerBadge]);
+			instance.fixedUpdateActions.Remove(timerBadge);
+			timerBadge.Expire();
+		}
+
 		public static void StopAll()
 		{
 			StopAllRegular();
-			StopAllUpdate();
+			StopAllUpdates();
+			StopAllFixedUpdates();
 		}
 
 		public static void StopAllRegular()
@@ -152,7 +202,8 @@ namespace Core.Timer
 			instance.coroutines.Clear();
 		}
 
-		public static void StopAllUpdate() => instance.updateActions.Clear();
+		public static void StopAllUpdates() => instance.updateActions.Clear();
+		public static void StopAllFixedUpdates() => instance.fixedUpdateActions.Clear();
 
 		#endregion
 
@@ -179,7 +230,19 @@ namespace Core.Timer
 
 		#region Unity methods
 
+		private void Awake()
+		{
+			coroutines = new Dictionary<TimerBadge, Coroutine>();
+			updateActions = new Dictionary<TimerBadge, Action>();
+			fixedUpdateActions = new Dictionary<TimerBadge, Action>();
+			updateActionsList = new List<Action>();
+			fixedUpdateActionsList = new List<Action>();
+
+			instance = this;
+		}
+
 		private void Update() => updateActionsList.ToList().ForEach(a => a?.Invoke());
+		private void FixedUpdate() => fixedUpdateActionsList.ToList().ForEach(a => a?.Invoke());
 		private void OnDestroy() => StopAll();
 
 		#endregion
