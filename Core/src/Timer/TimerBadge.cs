@@ -2,7 +2,7 @@ using System;
 
 namespace Core.Timer
 {
-	public struct TimerBadge
+	public sealed class TimerBadge
 	{
 		public int Id { get; }
 		public DateTime StartTime { get; }
