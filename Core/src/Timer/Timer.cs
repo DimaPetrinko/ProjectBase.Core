@@ -196,14 +196,9 @@ namespace Core.Timer
 			StopAllFixedUpdates();
 		}
 
-		public static void StopAllRegular()
-		{
-			instance.StopAllCoroutines();
-			instance.coroutines.Clear();
-		}
-
-		public static void StopAllUpdates() => instance.updateActions.Clear();
-		public static void StopAllFixedUpdates() => instance.fixedUpdateActions.Clear();
+		public static void StopAllRegular() => instance.coroutines.Keys.ToList().ForEach(Stop);
+		public static void StopAllUpdates() => instance.updateActions.Keys.ToList().ForEach(StopUpdate);
+		public static void StopAllFixedUpdates() => instance.fixedUpdateActions.Keys.ToList().ForEach(StopFixedUpdate);
 
 		#endregion
 
@@ -213,6 +208,7 @@ namespace Core.Timer
 		{
 			yield return new WaitForSeconds(seconds);
 			instance.coroutines.Remove(timerBadge);
+			timerBadge.Expire();
 			callback?.Invoke();
 		}
 
